@@ -683,7 +683,7 @@ class QQPDOffsetDisplay(QOffsetDisplay):
 
     def updateValue(self, qpd_dict):
         if self.isEnabled() and qpd_dict["is_good"]:
-            value = 1000.0 * qpd_dict["offset"]
+            value = 1000.0 * qpd_dict["offset"]  # 1000
             super().updateValue(value)
 
         

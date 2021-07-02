@@ -612,6 +612,12 @@ class HalCore(QtCore.QObject):
         """
 
         # Remove message from list of sent messages.
+        currMess = self.sent_messages
+        messageOut = None
+        if len(currMess) > 0:
+            messageOut = currMess[0]
+            # print(messageOut)
+            
         self.sent_messages.remove(message)
 
         # Disconnect messages processed signal.
@@ -631,7 +637,7 @@ class HalCore(QtCore.QObject):
         # Notify the sender if errors occured while processing the
         # message and exit if the sender doesn't handle the error.
         if message.hasErrors():
-            if not message.getSource().handleErrors(sent_message):
+            if not message.getSource().handleErrors(messageOut): # updated to match Blab
                 self.cleanUp()
                 return
 
