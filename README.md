@@ -1,11 +1,9 @@
 ## storm-control ##
-This is a repository of code developed in the [Zhuang lab](http://zhuang.harvard.edu) for the acquisition of STORM movies.
+This is the Boettiger lab version of the microscope control software originally developed in the Zhuang lab for the acquistion of STORM movies, and since diversified to other nanoscopy techniques including MERFISH, ORCA and general use microsocpy.
+You can find the Master branch still at [github.com/ZhuangLab/storm-control](https://github.com/ZhuangLab/storm-control).
 
+If you find this useful, please reference the Zhuang lab zenodo DOI.
 [![DOI](https://zenodo.org/badge/15257214.svg)](https://zenodo.org/badge/latestdoi/15257214)
-
-[Discussion Group](https://groups.google.com/d/forum/storm-analysis)
-
-Warning! There have been many changes and this software is now only compatible with Python3 / PyQt5! If you want the end of the line of the (deprecated) Python2 / PyQt4 software then use the python2_pyqt4 branch.
 
 ## Installation ##
 You will need Python3 and PyQt5 as well as a number of other libraries. Please see the Install.txt file in the hal4000 folder.
