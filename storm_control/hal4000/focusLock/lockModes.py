@@ -999,6 +999,8 @@ class ZScanLockMode(AlwaysOnLockMode): # previously inhereted from JumpLockMode
         Configure the variables that will be used to execute the z scan.
         zrange is in nm 
         """
+        z = 0 # initialization values, will be overwritten beloew
+        stop = 10 # initialization values, will be overwritten beloew
         def addZval(z_val):
             self.szs_zvals.append(z_val)
             self.szs_max_zvals += 1
@@ -1010,10 +1012,6 @@ class ZScanLockMode(AlwaysOnLockMode): # previously inhereted from JumpLockMode
         zrange = 0.001 * zrange
         step_size = 0.001 * step_size
 
-        # Turn off lock
-        if  self.amLocked() and self.szs_first_move:
-            self.stopLock()
-            self.szs_first_move = False
 
         # Initial hold.
         for i in range(deadtime-1):
@@ -1034,9 +1032,6 @@ class ZScanLockMode(AlwaysOnLockMode): # previously inhereted from JumpLockMode
         for i in range(deadtime-1):
             addZval(z_center)
             
-        # start lock
-        self.szs_first_move = True
-        # self.startLock()
         
     def handleNewFrame(self, frame):
         """
@@ -1063,14 +1058,13 @@ class ZScanLockMode(AlwaysOnLockMode): # previously inhereted from JumpLockMode
     def startFilm(self):
         self.szs_counter = 0
         if self.amLocked() and self.szs_zvals is not None:
-            self.behavior = "none"
+            self.behavior = "none"  # this is where the lock behavior is switched off during filming 
             self.szs_film_off = True
 
     def stopFilm(self):
         if self.szs_film_off:
             self.szs_film_off = False
-            self.behavior = "locked"
-            self.startLock()
+            self.behavior = "locked"  # this is where we switch it back on
             # LockMode.z_stage_functionality.recenter()        
 
 
@@ -1098,7 +1092,7 @@ class HardwareZScanLockMode(AlwaysOnLockMode):
         #        module somewhere else?
         p.add(params.ParameterString(description = "Frame z steps (in microns).",
                                      name = "z_offsets",
-                                     value = ""))
+                                     value = "-20,0,20"))
         
     def getWaveform(self):
         """
@@ -1122,6 +1116,7 @@ class HardwareZScanLockMode(AlwaysOnLockMode):
         self.hzs_zvals = None
         if (len(p.get("z_offsets")) > 0):
             self.hzs_zvals = numpy.array(list(map(float, p.get("z_offsets").split(","))))
+            print(self.hzs_zvals)
 
     def shouldEnableLockButton(self):
         return True

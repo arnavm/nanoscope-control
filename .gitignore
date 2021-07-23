@@ -14,6 +14,13 @@
 /storm_control/test/data/*.xml
 
 ##############
+## scope specific files
+##############
+*scope*.bat
+*scope*.xml
+
+
+##############
 ## camera offset files
 ##############
 cam_offsets_*.txt

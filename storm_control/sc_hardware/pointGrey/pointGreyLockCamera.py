@@ -112,13 +112,13 @@ class LockCamera(QtCore.QThread):
         #
         # Note: The order is important here.
         #
-        for pname in ["BlackLevel", "Gain", "Height", "Width", "OffsetX", "OffsetY", "AcquisitionFrameRate"]:
+        for pname in ["BlackLevel", "Gain", "Height", "Width", "OffsetX", "OffsetY", "AcquisitionFrameRate","ExposureTime"]:
             self.camera.setProperty(pname, parameters.get(pname))
 
         # Use maximum exposure time allowed by desired frame rate.
         #
         # self.camera.setProperty("ExposureTime", self.camera.getProperty("ExposureTime").getMaximum())
-        self.camera.setProperty("ExposureTime", 2000.0)  # 20000 50 fps  changed to 500 fps
+        #self.camera.setProperty("ExposureTime", 2000.0)  # 20000 50 fps  changed to 500 fps
 
         # Get current offsets.
         #

@@ -2,7 +2,7 @@
 <config>
 
   <!-- The starting directory. -->
-  <directory type="directory">C:\Users\Scope5\Data\</directory>
+  <directory type="directory">C:\Data\</directory>
 
   <!-- The setup name -->
   <setup_name type="string">scope5</setup_name>
@@ -74,14 +74,14 @@
 
       <!-- List objectives available on this setup here. -->
       <parameters>
-		<flip_horizontal desc="Flip image horizontal (mosaic)" type="boolean">False</flip_horizontal>
+		<flip_horizontal desc="Flip image horizontal (mosaic)" type="boolean">True</flip_horizontal>
 		<flip_vertical desc="Flip image vertical (mosaic)" type="boolean">False</flip_vertical>
-		<transpose desc="Transpose image (mosaic)" type="boolean">False</transpose>
+		<transpose desc="Transpose image (mosaic)" type="boolean">True</transpose>
 
 		<objective desc="Current objective" type="string" values="obj1,obj2,obj3">obj1</objective>
-		<obj1 desc="Objective 1" type="custom">100x,0.160,0.0,0.0</obj1>
-		<obj2 desc="Objective 2" type="custom">10x,1.60,0.0,0.0</obj2>
-		<obj3 desc="Objective 3" type="custom">4x,4.0,0.0,0.0</obj3>
+		<obj1 desc="Objective 1" type="custom">60x,0.108,0.0,0.0</obj1>
+		<obj2 desc="Objective 2" type="custom">20x,0.324,0.0,0.0</obj2>
+		<obj3 desc="Objective 3" type="custom">10x,0.648,0.0,0.0</obj3>
       </parameters>
     </mosaic>
 
@@ -127,8 +127,8 @@
           <!-- These are the display defaults, not the camera range. -->
           <default_max type="int">2000</default_max> 
           <default_min type="int">100</default_min>
-          <flip_horizontal type="boolean">False</flip_horizontal>
-          <flip_vertical type="boolean">True</flip_vertical>
+          <flip_horizontal type="boolean">True</flip_horizontal>
+          <flip_vertical type="boolean">False</flip_vertical>
           <transpose type="boolean">True</transpose>         
 
           <!-- This is the extension to use (if any) when saving data from this camera. -->
@@ -143,6 +143,7 @@
 	
 
 	
+	
   <!-- DAQ control -->
     <daq>
       <module_name type="string">storm_control.sc_hardware.nationalInstruments.nidaqModule</module_name>
@@ -156,10 +157,10 @@
 		 rising (True) or falling (False) edge of the camera signal
 	-->
         <timing>
-          <camera_fire_pin type="string">/Dev2/PFI0</camera_fire_pin>  <!-- PFI8 -->
-          <counter type="string">/Dev2/ctr2</counter>   <!-- ctr0 -->
-		  <counter_out type="string">/Dev2/PFI14</counter_out>
-          <rising_edge type="boolean">False</rising_edge>   <!-- falling edge -->
+          <camera_fire_pin type="string">/Dev3/PFI8</camera_fire_pin>  <!-- PFI8 = ctr0 source -->
+          <counter type="string">/Dev3/ctr0</counter>   <!-- ctr0 -->
+		  <counter_out type="string">/Dev3/PFI12</counter_out> <!-- PFI12 = ctr0 out.  Not actually used-->
+          <rising_edge type="boolean">True</rising_edge>   <!-- falling edge -->
         </timing>
         
         <!-- These are the things that we provide DAQ functionality for.
@@ -167,37 +168,37 @@
              message and "name" = "daq.xxx.yyy". -->
         <ilm750>
           <do_task>
-            <source type="string">/Dev2/port0/line4</source>
+            <source type="string">/Dev3/port0/line4</source>
           </do_task>
         </ilm750>
 
         <ilm647>
           <do_task>
-            <source type="string">/Dev2/port0/line3</source>
+            <source type="string">/Dev3/port0/line3</source>
           </do_task>      
         </ilm647>
 
         <ilm561>
           <do_task>
-            <source type="string">/Dev2/port0/line2</source>
+            <source type="string">/Dev3/port0/line2</source>
           </do_task>
         </ilm561>
 
         <ilm488>
           <do_task>
-            <source type="string">/Dev2/port0/line1</source>
+            <source type="string">/Dev3/port0/line1</source>
           </do_task>
         </ilm488>
 
         <ilm405>
           <do_task>
-            <source type="string">/Dev2/port0/line0</source>
+            <source type="string">/Dev3/port0/line0</source>
           </do_task>
         </ilm405>   
 
         <mcl>
           <ao_task>
-            <source type="string">/Dev2/ao0</source>
+            <source type="string">/Dev3/ao0</source>
           </ao_task>
         </mcl>        
 		
@@ -332,7 +333,7 @@
       <module_name type="string">storm_control.sc_hardware.ludl.ludlModule</module_name>
       <class_name type="string">LudlStageRS232</class_name>     
       <configuration>	
-        <com_port type="string">COM4</com_port>  <!-- LUDL STAGE COM PORT -->
+        <com_port type="string">COM8</com_port>  <!-- LUDL STAGE COM PORT -->
       </configuration>
     </ludl_stage>
 
@@ -409,10 +410,10 @@
       <configuration>
 		<parameters>   
 			<offset_has_center_bar type="boolean">True</offset_has_center_bar>
-			<offset_maximum type="float">100.0</offset_maximum>
-			<offset_minimum type="float">50.0</offset_minimum>
-			<offset_warning_high type="float">95</offset_warning_high>
-			<offset_warning_low type="float">55</offset_warning_low>
+			<offset_maximum type="float">70.0</offset_maximum>
+			<offset_minimum type="float">10.0</offset_minimum>
+			<offset_warning_high type="float">68</offset_warning_high>
+			<offset_warning_low type="float">12</offset_warning_low>
 			<sum_maximum type="float">100.0</sum_maximum>
 			<sum_minimum type="float">0.0</sum_minimum>
 			<sum_warning_low type="float">1.0</sum_warning_low>  
@@ -424,17 +425,18 @@
 			<BlackLevel type="float">1.0</BlackLevel>
 			<Gain type="float">1.0</Gain>
 			<AcquisitionFrameRate type="float">300.0</AcquisitionFrameRate>  <!-- was 30-->
+            <ExposureTime type="float">500.0</ExposureTime>  <!-- was 2000.0-->
 			<!--set the roi for the two spots -->
 			<Height type="int">128</Height>
 			<Width type="int">128</Width>
-			<OffsetX type="int">232</OffsetX>
-			<OffsetY type="int">160</OffsetY>	  
+			<OffsetX type="int">268</OffsetX>
+			<OffsetY type="int">220</OffsetY>	  
 			<background type="float">1.0</background>
 			<downsample type="int">1</downsample>
 			<offset type="float">1.0</offset>
 			<min_good type="int">4</min_good>
 			<reps type="int">10</reps>
-			<sigma type="float">3.0</sigma>
+			<sigma type="float">2.6</sigma>
 			<sum_scale type="float">0.02</sum_scale>
 			<sum_zero type="float">10.0</sum_zero>
 			<threshold type="float">200.0</threshold>
