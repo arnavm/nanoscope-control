@@ -1,1 +1,1 @@
-call C:\Users\Scope5\anaconda3\Scripts\activate.bat C:\Users\Scope5\anaconda3\ && activate Zlab && python hal4000.py xml/scope5_hcam_blackfly.xml
+call C:\Users\Scope5\anaconda3\Scripts\activate.bat C:\Users\Scope5\anaconda3\ && activate Zlab && python hal4000.py xml/scope5_config.xml
