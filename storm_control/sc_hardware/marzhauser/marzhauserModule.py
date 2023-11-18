@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
 HAL module for controlling a Marzhauser stage.
-
 Hazen 04/17
 """
 import re
@@ -54,10 +53,21 @@ class MarzhauserStageFunctionality(stageModule.StageFunctionality):
         self.pos_dict["x"] = x
         self.pos_dict["y"] = y
         self.stagePosition.emit(self.pos_dict)
-
+        
+    def goRelative(self, dx, dy):  # added 1/26/21
+        #
+        # Debugging all removal of stage position queries.
+        #
+        super().goRelative(dx,dy)
+        self.pos_dict["x"] = self.pos_dict["x"] + dx
+        self.pos_dict["y"] = self.pos_dict["y"] + dy
+        self.stagePosition.emit(self.pos_dict)
+        
+        
     def handleStagePosition(self, pos_dict):
         self.pos_dict = pos_dict
         #self.querying = False
+
 
     def handleUpdateTimer(self):
         """
