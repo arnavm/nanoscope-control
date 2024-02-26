@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """
 RS232 interface to a Marzhauser stage.
-
-Hazen 04/17
+Hazen 04/17  Alistair 11/17/2023,  2019
 """
 import traceback
 
@@ -19,17 +18,21 @@ class MarzhauserRS232(RS232.RS232):
         Connect to the Marzhauser stage at the specified port.
         """
         self.live = True
-        self.unit_to_um = 1000.0
+        self.unit_to_um = 1.0 # Use Marzhauser's "SWITCHBOARD" app to set units to microns
         self.um_to_unit = 1.0/self.unit_to_um
-        self.x = 0.0
-        self.y = 0.0
+        # self.x = 0.0  # Removed for function
+        # self.y = 0.0
 
         # RS232 stuff
         try:
             super().__init__(**kwds)
             test = self.commWithResp("?version")
+            print('version: ' )
+            print(test)
             if not test:
                 self.live = False
+            else:
+                print("Connected to the Marzhauser stage at port", kwds["port"])
 
         except (AttributeError, AssertionError):
             print(traceback.format_exc())
@@ -40,17 +43,29 @@ class MarzhauserRS232(RS232.RS232):
     def goAbsolute(self, x, y):
         x = x * self.um_to_unit
         y = y * self.um_to_unit
-        # FIXME: Too many digits here? Use format() instead? int()?"
+        """  for debugging
+        print("command go absolute")
+        print(x)
+        print(y)
+        """
         self.writeline(" ".join(["!moa", str(x), str(y)]))
 
     def goRelative(self, x, y):
         x = x * self.um_to_unit
         y = y * self.um_to_unit
+        """
+        print("command go Relative")
+        print(x)
+        print(y)
+        """
         self.writeline(" ".join(["!mor", str(x), str(y)]))
 
     def jog(self, x_speed, y_speed):
         vx = x_speed * self.um_to_unit
         vy = y_speed * self.um_to_unit
+        # print("command jog")
+        # print("x")
+        # print("y")
         self.writeline(" ".join(["!speed ", str(vx), str(vy)]))
         
     def joystickOnOff(self, on):
@@ -84,7 +99,7 @@ class MarzhauserRS232(RS232.RS232):
 if (__name__ == "__main__"):
     import time
 
-    stage = MarzhauserRS232(port = "COM1", baudrate = 57600)
+    stage = MarzhauserRS232(port = "COM11", baudrate = 57600)
     
     def comm(cmd, timeout):
         cmd()
