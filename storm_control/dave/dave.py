@@ -30,6 +30,7 @@ import storm_control.sc_library.hdebug as hdebug
 import storm_control.dave.notifications as notifications
 import storm_control.dave.sequenceGenerator as sequenceGenerator
 import storm_control.dave.sequenceViewer as sequenceViewer
+from xml_generators.v2Generator import XMLRecipeParser
 
 # Communication
 import storm_control.sc_library.tcpClient as tcpClient
@@ -40,6 +41,12 @@ import storm_control.dave.qtdesigner.dave_ui as daveUi
 # Parameter loading
 import storm_control.sc_library.parameters as params
 
+def debug_trace():
+  '''Set a tracepoint in the Python debugger that works with Qt'''
+  from PyQt5.QtCore import pyqtRemoveInputHook
+  from pdb import set_trace
+  pyqtRemoveInputHook()
+  set_trace()
 
 ## CommandEngine
 #
@@ -170,6 +177,7 @@ class Dave(QtWidgets.QMainWindow):
         self.skip_warning = False
         self.needs_hal = False
         self.needs_kilroy = False
+        self.has_rescue = False
 
         # UI setup.
         self.ui = daveUi.Ui_MainWindow()
@@ -241,6 +249,14 @@ class Dave(QtWidgets.QMainWindow):
         self.command_engine.paused.connect(self.handlePauseFromCommandEngine)
         self.command_engine.warning.connect(self.handleWarning)
         self.command_engine.dave_action.connect(self.handleDaveAction)
+
+        # Rescue engine.
+        self.rescue_engine = CommandEngine()
+        self.rescue_engine.done.connect(self.handleDoneFromRescueEngine)
+        self.rescue_engine.problem.connect(self.handleProblem)
+        self.rescue_engine.paused.connect(self.handlePauseFromCommandEngine)
+        self.rescue_engine.warning.connect(self.handleWarning)
+        self.rescue_engine.dave_action.connect(self.handleDaveAction)
 
     ## cleanUp
     #
@@ -449,6 +465,41 @@ class Dave(QtWidgets.QMainWindow):
         # Update progress bar and current command display.
         self.updateRunStatusDisplay()
 
+    ## handleDoneFromRescueEngine
+    #
+    # Handles completion of the rescue command engine.
+    # This is a more minimal version of handleDone
+    #
+    @hdebug.debug
+    def handleDoneFromRescueEngine(self):
+        #debug_trace()
+        # Increment command to the next valid command / action.
+        next_command = self.ui.rescueSequenceTreeView.getNextItem()
+
+        # Handle last command in list.
+        if next_command is None:
+            self.ui.rescueSequenceTreeView.resetItemIndex()
+            
+            self.running = False
+
+            # Stop TCP communication
+            if self.needs_hal:
+                self.rescue_engine.HALClient.stopCommunication()
+            if self.needs_kilroy:
+                self.rescue_engine.kilroyClient.stopCommunication()
+
+        # Continue with next command.
+        else:
+            # Check for requested pause.
+            # The way the rescue sequence is currently handled,
+            # self.running will be False by the time the script
+            # reaches here, so the next command will never be run
+            if self.running:
+                self.rescue_engine.startCommand(next_command.getDaveAction(),
+                                                self.test_mode)
+            else:
+                self.handlePause()
+
     ## handleDropXML
     #
     # Handles a drop event containing a url to an xml file
@@ -553,21 +604,32 @@ class Dave(QtWidgets.QMainWindow):
     #
     @hdebug.debug
     def handleProblem(self, message, message_str = False):
+        #debug_trace()
         current_item = self.ui.commandSequenceTreeView.getCurrentItem()
         # Compose message string.
         if not message_str:
             message_str = current_item.getDaveAction().getDescriptor() + "\n" + message.getErrorMessage()
 
         if not self.test_mode:
-
-            # Pause Dave.
-            self.handlePause()
-
             # Stop TCP communication.
             if self.needs_hal:
                 self.command_engine.HALClient.stopCommunication()
             if self.needs_kilroy:
                 self.command_engine.kilroyClient.stopCommunication()
+            
+            # Execute rescue sequence, if provided
+            if self.has_rescue:
+                #debug_trace()
+                if self.needs_hal:
+                    self.rescue_engine.kilroyClient.startCommunication()
+                if self.needs_kilroy:
+                    self.rescue_engine.HALClient.startCommunication()
+                rescue_action = self.ui.rescueSequenceTreeView.getCurrentItem()
+                self.rescue_engine.startCommand(rescue_action.getDaveAction(), self.test_mode)
+                message_str += "\nExecuting rescue protocol"
+            
+            # Pause Dave.
+            self.handlePause()
             
             # Display errors.
             if (self.ui.errorMsgCheckBox.isChecked()):
@@ -603,7 +665,7 @@ class Dave(QtWidgets.QMainWindow):
     #
     @hdebug.debug
     def handleRunButton(self, boolean):
-
+        #debug_trace()
         # Request pause.
         if (self.running):
             self.ui.runButton.setText("Pausing..")
@@ -668,7 +730,7 @@ class Dave(QtWidgets.QMainWindow):
     #
     @hdebug.debug
     def handleValidateCommandSequence(self, boolean):
-
+        #debug_trace()
         # Start Test Run
         if self.validateAndStartTCP():
 
@@ -717,7 +779,7 @@ class Dave(QtWidgets.QMainWindow):
             self.ui.currentWarnings.addWarning(current_item,
                                                message_str = message_str,
                                                descriptor = "Warning " + str(num_warnings+1))
-
+            
             # Check to see if the number of warnings is larger than the allowed number
             if self.ui.currentWarnings.count() >= self.ui.numWarningsToPause.value():
                 # Update Error Message
@@ -752,7 +814,34 @@ class Dave(QtWidgets.QMainWindow):
             self.ui.commandSequenceTreeView.setCurrentAction(dave_action_si)
         else:
             pass 
-
+    
+    ## newRescueSequence
+    #
+    # Parses an XML file describing the commands to execute in case of a warning or error
+    #
+    # @param sequence_filename The name of the XML file.
+    #
+    @hdebug.debug
+    def newRescueSequence(self):
+        #debug_trace()
+        parser = XMLRecipeParser()
+        xml, xml_file_path = parser.loadXML('', header = "Open rescue XML File", file_types = "XML (*.xml)")
+        if xml:
+            rescue_model = sequenceViewer.parseSequenceFile(xml_file_path)
+            # For now, constrain the rescue sequence to be only one command long.
+            # This is to minimize the possibilty of the rescue sequence triggering
+            # a warning itself, thereby going into an infinite loop of commands.
+            # In the future, with more intelligent programming, this limit could
+            # be relaxed and more complex rescue sequences supported.
+            if len(rescue_model.dave_actions_all) == 1:
+                self.ui.rescueSequenceTreeView.setModel(rescue_model)
+                self.ui.rescueSequenceTreeView.setTestMode(False)
+                self.has_rescue = True
+            else:
+                QtWidgets.QMessageBox.information(self,
+                                                  "Invalid Rescue File",
+                                                  "The rescue sequence file should only have one rescue command")
+                
     ## newSequence
     #
     # Parses a XML file describing the list of movies to take.
@@ -761,6 +850,7 @@ class Dave(QtWidgets.QMainWindow):
     #
     @hdebug.debug
     def newSequence(self, sequence_filename):
+        #debug_trace()
         if self.running:
             QtWidgets.QMessageBox.information(self,
                                               "New Sequence Request",
@@ -794,6 +884,9 @@ class Dave(QtWidgets.QMainWindow):
                 self.ui.runButton.setText("Start")
                 self.ui.abortButton.setEnabled(False)
                 self.ui.validateSequenceButton.setEnabled(True)
+                
+                # Prompt for rescue sequence file
+                self.newRescueSequence()
 
     ## updateEstimates
     #
@@ -826,6 +919,7 @@ class Dave(QtWidgets.QMainWindow):
     # @return tcp_ready A boolean describing the state of TCP communications
     #
     def validateAndStartTCP(self):
+        #debug_trace()
         self.needs_hal = False
         self.needs_kilroy = False
         types = self.ui.commandSequenceTreeView.getActionTypes()
@@ -845,6 +939,10 @@ class Dave(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.information(self,
                                                   "TCP Communication Error",
                                                   err_message)
+            if self.has_rescue:
+                    if not self.rescue_engine.HALClient.startCommunication():
+                        pass
+                    
         if self.needs_kilroy:
             if not self.command_engine.kilroyClient.startCommunication():
                 tcp_ready = False
@@ -853,6 +951,10 @@ class Dave(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.information(self,
                                                   "TCP Communication Error",
                                                   err_message)
+            if self.has_rescue:
+                    if not self.rescue_engine.kilroyClient.startCommunication():
+                        pass
+                    
         return tcp_ready
 
     ## quit
