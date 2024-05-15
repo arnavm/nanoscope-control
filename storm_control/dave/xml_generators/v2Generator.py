@@ -128,17 +128,27 @@ class XMLRecipeParser(QtWidgets.QWidget):
                 if new_node is not None:
                     primitives_xml.append(new_node)
 
-            elif child.tag == "change_directory": # Handle change_directory tag
+            elif child.tag == "change_directory": # Handle <change_directory> tag
                 new_node = daveActions.DASetDirectory().createETree({"directory": child.text})
                 if new_node is not None:
                     primitives_xml.append(new_node)
 
-            elif child.tag == "clear_warnings": # Handle the clear_warnings tag
+            elif child.tag == "clear_warnings": # Handle the <clear_warnings> tag
                 new_node = daveActions.DAClearWarnings().createETree({})
                 if new_node is not None:
                     primitives_xml.append(new_node)
 
-            elif child.tag == "email": # Handle the email tag
+            elif child.tag == "delay": # Handle the <delay> tag
+                new_node = daveActions.DADelay().createETree({"delay": child.text})
+                if new_node is not None:
+                    primitives_xml.append(new_node)
+            
+            elif child.tag == "wake_lasers": # Handle <wake_lasers> tag
+                new_node = daveActions.DAWakeLasers().createETree({"pause": child.text})
+                if new_node is not None:
+                    primitives_xml.append(new_node)
+
+            elif child.tag == "email": # Handle the <email> tag
                 # Grab the elements of this node and create a dictionary
                 dictionary = {"subject": None,
                               "body": None}

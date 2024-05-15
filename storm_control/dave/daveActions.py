@@ -517,6 +517,10 @@ class DADelay(DaveAction):
                                              message_data = {"delay": self.delay});
         self.message.addResponse("duration", self.delay)
 
+        # Require validation.
+        # 
+        self.id = self.delay
+
     ## start
     #
     # Start the action.
@@ -1263,6 +1267,51 @@ class DAValveProtocol(DaveAction):
         #
         self.id = self.message.getType() + " "
         self.id = self.protocol_name        
+
+## DAWakeLasers
+#
+# Wake the lasers prior to taking a movie.
+#
+class DAWakeLasers(DaveAction):
+
+    ## __init__
+    #
+    def __init__(self):
+        DaveAction.__init__(self)
+
+        self.action_type = "hal"
+
+    ## createETree
+    #
+    # @param dictionary A dictionary.
+    #
+    # @return A ElementTree object or None.
+    #
+    def createETree(self, dictionary):
+        block = ElementTree.Element(str(type(self).__name__))
+        return block
+
+    ## getDescriptor
+    #
+    # @return A string that describes the action.
+    #
+    def getDescriptor(self):
+        return "wake up lasers"
+
+    ## setup
+    #
+    # Perform post creation initialization.
+    #
+    # @param node The node of an ElementTree.
+    #
+    def setup(self, node):
+        self.message = tcpMessage.TCPMessage(message_type = "Wake Lasers",
+                                             message_data = {})
+        
+        # Require validation.
+        #
+        self.id = self.message.getType()
+
 
 #
 # The MIT License
