@@ -186,7 +186,18 @@ class XMLRecipeParser(QtWidgets.QWidget):
                     for [loop_ID, loop_iterator] in enumerate(self.loop_iterator):
                         pad_length = len(str(len(self.loop_variables[loop_ID])))
                         if loop_iterator >= 0:
+                            # Gracefully handled nested loop variables where not
+                            # every hierarchical loop needs incrementing
+                            try:
+                                increment = self.loop_variables[loop_ID].attrib["increment"]
+                            except KeyError:
+                                increment = True
+                            if increment == "No":
+                                continue
+                            elif increment:
                             new_child.text += "_" + str(loop_iterator).zfill(pad_length)
+                            else:
+                                raise Exception("invalid value for parameter 'increment'")
                 
                 if child.tail == None: new_child.tail = ""
                 else: new_child.tail = str(child.tail)
@@ -230,7 +241,11 @@ class XMLRecipeParser(QtWidgets.QWidget):
     def handleVariableEntry(self, child, new_parent):
         variable_name = child.attrib["name"]
         loop_ID = self.loop_variable_names.index(variable_name)
-
+        try:
+            # This allows one loop variable to keep in sync with another loop
+            sync_loop_ID = self.loop_variable_names.index(child.attrib["sync"])
+            variable_entry = self.loop_variables[loop_ID][self.loop_iterator[sync_loop_ID]]
+        except KeyError:
         variable_entry = self.loop_variables[loop_ID][self.loop_iterator[loop_ID]]
 
         # Add a tail to the last child for a pretty final xml file
