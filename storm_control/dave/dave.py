@@ -371,8 +371,10 @@ class Dave(QtWidgets.QMainWindow):
             self.handleClearWarnings(False) #The boolean is a dummy variable
             self.command_engine.handleActionComplete(message) # Send message back to command engine to signal completion
         elif (message.getType() == "Dave Email"): # Handle an email request
-            self.notifier.sendMessage(message.getData("subject"), message.getData("body"))
-            self.command_engine.handleActionComplete(message) # Return message back to command engine
+            # Only send e-mail if not in test mode
+            if not self.test_mode:
+                self.notifier.sendMessage(message.getData("subject"), message.getData("body"))
+                self.command_engine.handleActionComplete(message) # Return message back to command engine
         else:
             pass # No other options currently        
         
@@ -730,7 +732,7 @@ class Dave(QtWidgets.QMainWindow):
     #
     @hdebug.debug
     def handleValidateCommandSequence(self, boolean):
-        #debug_trace()
+        # debug_trace()
         # Start Test Run
         if self.validateAndStartTCP():
 

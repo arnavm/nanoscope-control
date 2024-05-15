@@ -590,8 +590,12 @@ class DAEmail(DaveAction):
         # Look for message data
         if node.find("subject") is not None:
             self.email_subject = node.find("subject").text
+        if self.email_subject is None:
+            self.email_subject = ""
         if node.find("body") is not None:
             self.email_body = node.find("body").text
+        if self.email_body is None:
+            self.email_body = ""
 
         # Create message data
         message_data = {"subject": self.email_subject,
@@ -599,6 +603,12 @@ class DAEmail(DaveAction):
         
         self.message = tcpMessage.TCPMessage(message_type = "Dave Email",
                                              message_data = message_data)
+
+        # Require validation.
+        # 
+        self.id = self.message.getType() + " "
+        self.id += self.email_subject + " "
+        self.id += self.email_body
 
     ## start
     #

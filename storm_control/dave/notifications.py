@@ -29,7 +29,7 @@ class Notifier(object):
         self.from_password = str(from_password)
         self.smtp_server = str(smtp_server)
         self.to_address = str(to_address)
-        self.email_port = 587 # Port for gmail
+        self.email_port = 465 #changed from 587 4/30/24 to enable SSL # Port for gmail
 
         # Trim whitespace from email addresses
         self.to_address_list = self.to_address.split(',')
@@ -66,8 +66,8 @@ class Notifier(object):
                 msg['From'] = self.from_address
                 msg['To'] = self.to_address
             
-                server = smtplib.SMTP(self.smtp_server, self.email_port)
-                server.starttls()
+                server = smtplib.SMTP_SSL(self.smtp_server, self.email_port)
+                #server.starttls 4/30/24 to enable SSL
                 server.login(self.from_address, self.from_password)
                 server.sendmail(self.from_address, self.to_address_list, msg.as_string())
                 server.quit()
