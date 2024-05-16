@@ -5,7 +5,16 @@ Generic Lumencor laser control via HTTP (ethernet connection).
 Bogdan 3/19
 """
 import urllib.request
+from urllib.error import URLError
 import traceback
+
+def debug_trace():
+    '''Set a tracepoint in the Python debugger that works with Qt'''
+    from PyQt5.QtCore import pyqtRemoveInputHook
+    from pdb import set_trace
+    pyqtRemoveInputHook()
+    set_trace()
+
 def lumencor_httpcommand(command = 'GET IP',ip = '192.168.201.200'):
     """
     Sends commands to the lumencor system via http.
@@ -13,9 +22,20 @@ def lumencor_httpcommand(command = 'GET IP',ip = '192.168.201.200'):
     http://lumencor.com/wp-content/uploads/sites/11/2019/01/57-10018.pdf
     """
     command_full = r'http://'+ip+'/service/?command='+command.replace(' ','%20')
-    with urllib.request.urlopen(command_full) as response:
-        message = eval(response.read()) # the default is conveniently JSON so eval creates dictionary
+    while True:
+        # This loop is to handle the rare case of a TimeoutError/URLError crashing HAL.
+        # With this approach, we try again until we receive a valid response.
+        try:
+            response = urllib.request.urlopen(command_full)
+            break
+        except (TimeoutError, URLError) as error:
+            pass
+    message = eval(response.read())
     return message
+    # Original code below
+    # with urllib.request.urlopen(command_full) as response:
+        # message = eval(response.read()) # the default is conveniently JSON so eval creates dictionary
+    # return message
 
 class LumencorLaser(object):
     """
@@ -46,20 +66,24 @@ class LumencorLaser(object):
             self.setExtControl(True)
             if (not self.getLaserOnOff()):
                 self.setLaserOnOff(False)
+                
     def getNumberLasers(self):
         """Return the number of lasers the current lumencor system can control"""
         self.message = lumencor_httpcommand(command ='GET CHMAP', ip=self.ip)
         if self.message['message'][0]=='A':
             return len(self.message['message'].split(' '))-2
         return 0
+        
     def getColor(self):
         """Returns the color of the current laser"""
         self.message = lumencor_httpcommand(command ='GET CHMAP', ip=self.ip)
         colors = self.message['message'].split(' ')[2:]
         return colors[int(self.laser_id)]
+        
     def getIP(self):
         self.message = lumencor_httpcommand(command = 'GET IP', ip=self.ip)
         return self.message
+        
     def getExtControl(self):
         """
         Return True/False the lasers can be controlled with TTL.
@@ -67,6 +91,7 @@ class LumencorLaser(object):
         self.message = lumencor_httpcommand(command = 'GET TTLENABLE', ip=self.ip)
         response = self.message['message']
         return response[-1]=='1'
+        
     def setExtControl(self, mode):
         """
         Turn on/off external TTL control mode.
@@ -117,6 +142,7 @@ class LumencorLaser(object):
             self.message = lumencor_httpcommand(command = 'SET CH '+self.laser_id+' 0', ip=self.ip)
             self.on = False
         print("Turning On/Off", self.on, self.message)
+        
     def setPower(self, power_in_mw):
         """
         power_in_mw - The desired laser power in mW.
@@ -129,6 +155,7 @@ class LumencorLaser(object):
         if self.message['message'][0]=='A':
             return True
         return False
+        
     def shutDown(self):
         """
         Turn the laser off.
@@ -136,12 +163,19 @@ class LumencorLaser(object):
         if self.live:
             self.setPower(0)
             self.setLaserOnOff(False)
+            
     def getStatus(self):
         """
         Get the status
         """
         return self.live
 
+    def wakeLasers(self):
+        """
+        Wake up the lasers.
+        """
+        import time
+        lumencor_httpcommand(command = 'WAKEUP',ip=self.ip)
 
 #
 # Testing
