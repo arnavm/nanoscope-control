@@ -17,6 +17,12 @@ import storm_control.hal4000.film.filmRequest as filmRequest
 import storm_control.hal4000.halLib.halMessage as halMessage
 import storm_control.hal4000.halLib.halModule as halModule
 
+def debug_trace():
+    '''Set a tracepoint in the Python debugger that works with Qt'''
+    from PyQt5.QtCore import pyqtRemoveInputHook
+    from pdb import set_trace
+    pyqtRemoveInputHook()
+    set_trace()
 
 def calculateMovieStats(tcp_message, parameters):
     """
@@ -497,6 +503,18 @@ class Controller(QtCore.QObject):
                 action = TCPActionTakeMovie(tcp_message = tcp_message)
                 self.controlAction.emit(action)
 
+        elif tcp_message.isType("Wake Lasers"):
+            # This is definitely an inelegant hack but it gets the job done.
+            # In the future it should probably be replaced with a halMessage that
+            # is picked up by the relevant hardware modules, which would decouple the
+            # specific implementations of the wakeup command from the message processor.
+            if not tcp_message.isTest():
+                print("Waking up lasers...")
+                import storm_control.sc_hardware.lumencor.celesta as celesta
+                laser = celesta.LumencorLaser() # defaults OK here
+                laser.wakeLasers()
+            self.server.sendMessage(tcp_message)
+        
         else:
             if tcp_message.isTest() or (not self.parallel_mode):
                 action = TCPAction(tcp_message = tcp_message)
