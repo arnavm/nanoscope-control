@@ -9,8 +9,15 @@ import numpy
 
 import xml.etree.ElementTree as ElementTree
 
+import storm_control.sc_library.hdebug as hdebug
 import storm_control.sc_library.halExceptions as halExceptions
 
+def debug_trace():
+    '''Set a tracepoint in the Python debugger that works with Qt'''
+    from PyQt5.QtCore import pyqtRemoveInputHook
+    from pdb import set_trace
+    pyqtRemoveInputHook()
+    set_trace()
 
 class ShutterXMLException(halExceptions.HalException):
     pass
@@ -179,7 +186,7 @@ def parseShuttersXML(channel_name_to_id, shutters_file, can_oversample = True):
             while i < color_end:
                 color_data[i] = color
                 i += 1
-
+    #hdebug.logText(str(waveforms))
     return [ShuttersInfo(color_data = color_data, frames = frames),
             waveforms,
             oversampling]
