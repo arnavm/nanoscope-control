@@ -13,11 +13,18 @@ from PyQt5 import QtCore
 
 import storm_control.sc_library.halExceptions as halExceptions
 import storm_control.sc_library.parameters as params
+import storm_control.sc_library.hdebug as hdebug
 
 import storm_control.hal4000.halLib.halFunctionality as halFunctionality
 import storm_control.hal4000.halLib.halMessage as halMessage
 import storm_control.hal4000.halLib.halModule as halModule
 
+def debug_trace():
+    '''Set a tracepoint in the Python debugger that works with Qt'''
+    from PyQt5.QtCore import pyqtRemoveInputHook
+    from pdb import set_trace
+    pyqtRemoveInputHook()
+    set_trace()
 
 class HardwareTimingFrame(object):
     """
@@ -134,7 +141,6 @@ class HardwareTiming(halModule.HalModule):
                                                        data = {"properties" : {}}))
 
     def processMessage(self, message):
-
         if message.isType("configuration"):
 
             # Check for master cameras. If they exist this is an error in the setup
@@ -154,6 +160,7 @@ class HardwareTiming(halModule.HalModule):
                 timing_fn = message.getData()["properties"]["functionality"]
                 if (timing_fn.getTimeBase() == self.module_name) and self.film_settings.isFixedLength():
                     self.hardware_timing_functionality.setFilmLength(self.film_settings.getFilmLength())
+                hdebug.logText("Film length: {}".format(self.film_settings.getFilmLength()))
 
         elif message.isType("configure1"):
 
