@@ -820,6 +820,10 @@ class HamamatsuCameraMR(HamamatsuCamera):
         self.hcam_ptr = False
         self.old_frame_bytes = -1
 
+        # Configure all cameras to allow input triggers (for multi-camera control)
+        self.setPropertyValue("output_trigger_kind[0]", "EXPOSURE")
+        self.setPropertyValue("output_trigger_polarity[0]", "POSITIVE")
+
     def getFrames(self):
         """
         Gets all of the available frames.
